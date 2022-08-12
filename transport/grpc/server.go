@@ -64,6 +64,7 @@ func (s *Server) listenAndEndpoint() error {
 		s.lis = lis
 	}
 	if s.endpoint == nil {
+		// 该函数主要是将serve服务运行的位置进行暴露
 		addr, err := host.Extract(s.address, s.lis)
 		if err != nil {
 			s.err = err
