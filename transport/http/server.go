@@ -34,6 +34,7 @@ func NewServer() *Server {
 		network: "tcp",
 		address: ":0",
 	}
+	srv.Server = &http.Server{}
 	return srv
 
 }
