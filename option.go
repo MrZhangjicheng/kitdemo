@@ -2,6 +2,9 @@ package kitdemo
 
 import (
 	"context"
+
+	"github.com/MrZhangjicheng/kitdemo/log"
+
 	"net/url"
 	"os"
 
@@ -20,6 +23,7 @@ type options struct {
 	//注册服务实例的基本信息
 	id        string
 	name      string
+	version   string
 	endpoints []*url.URL
 	// 设计到生命周期的管理
 	ctx     context.Context
@@ -30,6 +34,9 @@ type options struct {
 
 	// 服务相关 http grpc
 	Servers []transport.Server
+
+	// 日志
+	logger log.Logger
 }
 
 //  options 不对外暴露，通过 Option来设置参数
@@ -38,6 +45,10 @@ func ID(id string) Option {
 }
 func Name(name string) Option {
 	return func(o *options) { o.name = name }
+}
+
+func Version(version string) Option {
+	return func(o *options) { o.version = version }
 }
 
 func Endpoints(endpoints ...*url.URL) Option {
@@ -51,4 +62,8 @@ func Server(srv ...transport.Server) Option {
 }
 func Singles(s ...os.Signal) Option {
 	return func(o *options) { o.singles = s }
+}
+
+func Logger(logger log.Logger) Option {
+	return func(o *options) { o.logger = logger }
 }

@@ -8,6 +8,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/MrZhangjicheng/kitdemo/log"
 	"github.com/MrZhangjicheng/kitdemo/registry"
 	"github.com/MrZhangjicheng/kitdemo/transport"
 	"github.com/google/uuid"
@@ -21,6 +22,7 @@ import (
 type AppInfo interface {
 	ID() string
 	Name() string
+	Version() string
 	Endpoints() []string
 }
 
@@ -30,10 +32,10 @@ type App struct {
 	// 用户可配置参数
 	opts options
 	// 控制生命周期
-	mu     sync.Mutex
 	ctx    context.Context
 	cancel func()
 	// 注册到注册中心的实例，该参数 由 opts 构建 serviceInstance 进行真实服务注册
+	mu       sync.Mutex
 	instance *registry.ServiceIntance
 }
 
@@ -47,6 +49,9 @@ func New(opts ...Option) *App {
 	}
 	for _, opt := range opts {
 		opt(&o)
+	}
+	if o.logger != nil {
+		log.SetLogger(o.logger)
 	}
 	ctx, cancel := context.WithCancel(o.ctx)
 	return &App{
@@ -136,6 +141,8 @@ func (a *App) ID() string { return a.opts.id }
 
 func (a *App) Name() string { return a.opts.name }
 
+func (a *App) Version() string { return a.opts.version }
+
 func (a *App) Endpoint() []string {
 	if a.instance != nil {
 		return a.instance.Endpoints
@@ -165,6 +172,7 @@ func (a *App) buildInstance() (*registry.ServiceIntance, error) {
 	return &registry.ServiceIntance{
 		ID:        a.opts.id,
 		Name:      a.opts.name,
+		Version:   a.opts.version,
 		Endpoints: endpoints,
 	}, nil
 }
