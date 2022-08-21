@@ -2,7 +2,7 @@ package registry
 
 import "context"
 
-// 注册中心
+// 该模块是注册中心的最高级接口，所有要集成的注册中心要实现该接口
 type Registar interface {
 	Register(ctx context.Context, service *ServiceIntance) error
 	Deregister(ctx context.Context, service *ServiceIntance) error
@@ -11,6 +11,16 @@ type Registar interface {
 // 服务发现
 type Discover interface {
 	FindService(ctx context.Context, serviceName string) ([]*ServiceIntance, error)
+	// 创建一个观察者
+	Watch(ctx context.Context, serviceName string) (Watcher, error)
+}
+
+type Watcher interface {
+	// 第一观看且服务列表不为空
+	// 任何实例列表更改
+	Next() ([]*ServiceIntance, error)
+
+	Stop() error
 }
 
 // 服务的抽象,即需要在注册中心注册的信息  k-v

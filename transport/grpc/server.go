@@ -8,8 +8,10 @@ import (
 
 	"github.com/MrZhangjicheng/kitdemo/internal/endpoint"
 	"github.com/MrZhangjicheng/kitdemo/internal/host"
+	"github.com/MrZhangjicheng/kitdemo/log"
 	"github.com/MrZhangjicheng/kitdemo/transport"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 var (
@@ -37,7 +39,7 @@ func NewServer() *Server {
 	}
 	grpcOpts := []grpc.ServerOption{}
 	srv.Server = grpc.NewServer(grpcOpts...)
-
+	reflection.Register(srv.Server)
 	return srv
 }
 
@@ -45,12 +47,14 @@ func (s *Server) Start(ctx context.Context) error {
 	if err := s.listenAndEndpoint(); err != nil {
 		return s.err
 	}
+	log.Infof("[gRPC] server listening on: %s", s.lis.Addr().String())
 
 	return s.Serve(s.lis)
 }
 
 func (s *Server) Stop(ctx context.Context) error {
 	s.GracefulStop()
+	log.Info("[gRPC] server stopping")
 	return nil
 }
 
