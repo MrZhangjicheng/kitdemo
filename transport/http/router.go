@@ -23,6 +23,6 @@ func newRouter(prefix string) *Router {
 	return r
 }
 
-func (r *Router) GET(path string, h HandleFunc) {
+func (r *Router) Handle(method, relativePath string, h HandleFunc) {
 
 }
