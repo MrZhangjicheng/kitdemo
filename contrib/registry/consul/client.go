@@ -29,10 +29,10 @@ type Client struct {
 	deregisterCriticalServiceAfter int
 }
 
-type ServiceResolver func(ctx context.Context, entries []*api.ServiceEntry) []*registry.ServiceInstance
+type ServiceResolver func(ctx context.Context, entries []*api.ServiceEntry) []*registry.ServiceIntance
 
-func defaultResolver(_ context.Context, entries []*api.ServiceEntry) []*registry.ServiceInstance {
-	services := make([]*registry.ServiceInstance, 0, len(entries))
+func defaultResolver(_ context.Context, entries []*api.ServiceEntry) []*registry.ServiceIntance {
+	services := make([]*registry.ServiceIntance, 0, len(entries))
 
 	for _, entry := range entries {
 		// 版本号
@@ -54,7 +54,7 @@ func defaultResolver(_ context.Context, entries []*api.ServiceEntry) []*registry
 			endpoints = append(endpoints, fmt.Sprintf("http://%s:5d", entry.Service.Address, entry.Service.Port))
 		}
 
-		services = append(services, &registry.ServiceInstance{
+		services = append(services, &registry.ServiceIntance{
 			ID:        entry.Service.ID,
 			Name:      entry.Service.Service,
 			Endpoints: endpoints,
@@ -78,7 +78,7 @@ func NewClient(cli *api.Client) *Client {
 }
 
 // 注册
-func (c *Client) Register(_ context.Context, svc *registry.ServiceInstance, enableHealthCheck bool) error {
+func (c *Client) Register(_ context.Context, svc *registry.ServiceIntance, enableHealthCheck bool) error {
 	// 构建consul中的服务真实地址
 	address := make(map[string]api.ServiceAddress)
 	// 用来健康检查
@@ -162,7 +162,7 @@ func (c *Client) Deregister(_ context.Context, serviceID string) error {
 }
 
 // 这个复杂查找采用了类似分页的方法 先不用
-func (c *Client) Service(ctx context.Context, service string, index uint64, passingOnly bool) ([]*registry.ServiceInstance, uint64, error) {
+func (c *Client) Service(ctx context.Context, service string, index uint64, passingOnly bool) ([]*registry.ServiceIntance, uint64, error) {
 	opts := &api.QueryOptions{
 		WaitIndex: index,
 		WaitTime:  time.Second * 55,

@@ -11,12 +11,18 @@ import (
 	"github.com/MrZhangjicheng/kitdemo/internal/endpoint"
 	"github.com/MrZhangjicheng/kitdemo/internal/host"
 	"github.com/MrZhangjicheng/kitdemo/transport"
+	"github.com/gorilla/mux"
 )
 
 var (
-	_ transport.Server = (*Server)(nil)
+	_ transport.Server     = (*Server)(nil)
+	_ transport.Endpointer = (*Server)(nil)
+	_ http.Handler         = (*Server)(nil)
 )
 
+// http 服务应该具备的能力
+// 路由注册
+// 中间件
 type Server struct {
 	//  启动http服务的基本条件
 	*http.Server
@@ -27,16 +33,41 @@ type Server struct {
 	err      error
 	// 是否加密
 	tlsConf *tls.Config
+	// 路由能力 支持动态路由以及路由组的概念
+	router      *mux.Router
+	strictSlash bool // 路由规则是否严格
+
 }
 
 func NewServer() *Server {
 	srv := &Server{
-		network: "tcp",
-		address: ":0",
+		network:     "tcp",
+		address:     ":0",
+		strictSlash: true,
 	}
+	srv.router = mux.NewRouter().StrictSlash(srv.strictSlash)
+	srv.router.NotFoundHandler = http.DefaultServeMux
+	srv.router.MethodNotAllowedHandler = http.DefaultServeMux
 	srv.Server = &http.Server{}
 	return srv
 
+}
+
+// 路由相关
+func (s *Server) Route(prefix string) *Router {
+	return newRouter(prefix)
+}
+
+func (s *Server) Endpoint() (*url.URL, error) {
+	if err := s.listenAndEndpoint(); err != nil {
+		return nil, err
+	}
+	return s.endpoint, nil
+}
+
+func (s *Server) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	// httpServer 中的handler 接口
+	s.Handler.ServeHTTP(res, req)
 }
 
 func (srv *Server) Start(ctx context.Context) error {
