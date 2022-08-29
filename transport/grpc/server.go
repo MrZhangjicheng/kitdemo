@@ -11,6 +11,7 @@ import (
 	"github.com/MrZhangjicheng/kitdemo/log"
 	"github.com/MrZhangjicheng/kitdemo/transport"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -30,6 +31,11 @@ type Server struct {
 	err      error
 	// 是否加密
 	tlsConf *tls.Config
+	// 拦截器 (grpc代码中只支持一个)
+	unaryInts  []grpc.UnaryServerInterceptor
+	streamInts []grpc.StreamServerInterceptor
+	// grpc 服务启动参数设置
+	grpcOpts []grpc.ServerOption
 }
 
 func NewServer() *Server {
@@ -37,7 +43,25 @@ func NewServer() *Server {
 		network: "tcp",
 		address: ":0",
 	}
-	grpcOpts := []grpc.ServerOption{}
+	unaryInts := []grpc.UnaryServerInterceptor{}
+	streamInts := []grpc.StreamServerInterceptor{}
+
+	if len(srv.unaryInts) > 0 {
+		unaryInts = append(unaryInts, srv.unaryInts...)
+	}
+	if len(srv.streamInts) > 0 {
+		streamInts = append(streamInts, srv.streamInts...)
+	}
+	grpcOpts := []grpc.ServerOption{
+		grpc.ChainUnaryInterceptor(unaryInts...),
+		grpc.ChainStreamInterceptor(streamInts...),
+	}
+	if srv.tlsConf != nil {
+		grpcOpts = append(grpcOpts, grpc.Creds(credentials.NewTLS(srv.tlsConf)))
+	}
+	if len(srv.grpcOpts) > 0 {
+		grpcOpts = append(grpcOpts, srv.grpcOpts...)
+	}
 	srv.Server = grpc.NewServer(grpcOpts...)
 	reflection.Register(srv.Server)
 	return srv
