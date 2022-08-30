@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 
 	"github.com/MrZhangjicheng/kitdemo/registry"
 	"google.golang.org/grpc"
@@ -65,7 +66,9 @@ type clientOptions struct {
 
 func Dial(ctx context.Context, opts ...Option) (*grpc.ClientConn, error) {
 	options := clientOptions{}
-	grpcOpts := []grpc.DialOption{}
+	grpcOpts := []grpc.DialOption{
+		grpc.WithInsecure(),
+	}
 	for _, opt := range opts {
 		opt(&options)
 	}
@@ -82,6 +85,7 @@ func Dial(ctx context.Context, opts ...Option) (*grpc.ClientConn, error) {
 		options.endpoint = srvs[0].Endpoints[0][7:]
 
 	}
-	return grpc.Dial(options.endpoint, grpcOpts...)
+	fmt.Println(options.endpoint)
+	return grpc.DialContext(ctx, options.endpoint, grpcOpts...)
 
 }
