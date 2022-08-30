@@ -22,9 +22,9 @@ func Withdiscovery(discovery registry.Discover) Option {
 	}
 }
 
-func WithserviceName(discovery registry.Discover) Option {
+func WithserviceName(name string) Option {
 	return func(o *clientOptions) {
-		o.discovery = discovery
+		o.serviceName = name
 	}
 }
 
@@ -82,6 +82,6 @@ func Dial(ctx context.Context, opts ...Option) (*grpc.ClientConn, error) {
 		options.endpoint = srvs[0].Endpoints[0][7:]
 
 	}
-	return grpc.DialContext(ctx, options.endpoint, grpcOpts...)
+	return grpc.Dial(options.endpoint, grpcOpts...)
 
 }

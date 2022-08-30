@@ -62,6 +62,7 @@ func (s *Server) Endpoint() (*url.URL, error) {
 	if err := s.listenAndEndpoint(); err != nil {
 		return nil, err
 	}
+
 	return s.endpoint, nil
 }
 

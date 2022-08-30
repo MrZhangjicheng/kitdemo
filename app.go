@@ -44,7 +44,7 @@ func New(opts ...Option) *App {
 		ctx:     context.Background(),
 		singles: []os.Signal{syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT},
 	}
-	if id, err := uuid.NewUUID(); err != nil {
+	if id, err := uuid.NewUUID(); err == nil {
 		o.id = id.String()
 	}
 	for _, opt := range opts {

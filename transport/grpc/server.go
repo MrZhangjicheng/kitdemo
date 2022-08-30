@@ -16,7 +16,8 @@ import (
 )
 
 var (
-	_ transport.Server = (*Server)(nil)
+	_ transport.Server     = (*Server)(nil)
+	_ transport.Endpointer = (*Server)(nil)
 )
 
 //  grpc 服务对应的结构
@@ -65,6 +66,13 @@ func NewServer() *Server {
 	srv.Server = grpc.NewServer(grpcOpts...)
 	reflection.Register(srv.Server)
 	return srv
+}
+
+func (s *Server) Endpoint() (*url.URL, error) {
+	if err := s.listenAndEndpoint(); err != nil {
+		return nil, s.err
+	}
+	return s.endpoint, nil
 }
 
 func (s *Server) Start(ctx context.Context) error {
