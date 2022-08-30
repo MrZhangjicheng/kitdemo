@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"net/url"
+	"strings"
 
 	"github.com/MrZhangjicheng/kitdemo/registry"
 	"google.golang.org/grpc"
@@ -23,16 +25,9 @@ func Withdiscovery(discovery registry.Discover) Option {
 	}
 }
 
-func WithserviceName(name string) Option {
-	return func(o *clientOptions) {
-		o.serviceName = name
-	}
-}
-
 type clientOptions struct {
-	serviceName string
 	// 客户端基本配置
-	endpoint string
+	endpoint string // 两种模式 一种是直接ip+port  另一种采用服务发现 "discovery//<author>/servicename"
 	tlsConf  *tls.Config
 	// ints     []grpc.UnaryClientInterceptor
 	grpcOpts  []grpc.DialOption
@@ -75,17 +70,55 @@ func Dial(ctx context.Context, opts ...Option) (*grpc.ClientConn, error) {
 	if len(options.grpcOpts) > 0 {
 		grpcOpts = append(grpcOpts, options.grpcOpts...)
 	}
-	if options.endpoint == "" && options.discovery != nil {
-		watcher, err := options.discovery.Watch(context.Background(), options.serviceName)
+	// 判断 endpoint 传入的是 服务的地址还是注册中心的地址
+
+	target, err := parseTarget(options.endpoint)
+	if err != nil {
+		return nil, err
+	}
+	if target.Scheme == "grpc" && target.Authority != "" {
+		return grpc.DialContext(ctx, options.endpoint, grpcOpts...)
+	}
+
+	if options.discovery != nil {
+		watcher, err := options.discovery.Watch(context.Background(), target.Endpoint)
 		if err != nil {
 			panic("服务发现错误")
 		}
 		srvs, _ := watcher.Next()
-		// 任意选择一个服务实例 负载均衡
-		options.endpoint = srvs[0].Endpoints[0][7:]
-
+		// 同时开启http服务和grpc服务选择对服务
+		srv := srvs[0]
+		for _, k := range srv.Endpoints {
+			if strings.Contains(k, "grpc") {
+				options.endpoint = k[7:]
+			}
+		}
 	}
+
 	fmt.Println(options.endpoint)
 	return grpc.DialContext(ctx, options.endpoint, grpcOpts...)
 
+}
+
+type Target struct {
+	Scheme    string
+	Authority string
+	Endpoint  string
+}
+
+func parseTarget(endpoint string) (*Target, error) {
+	if !strings.Contains(endpoint, "://") {
+		endpoint = "grpc://" + endpoint
+	}
+
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return nil, err
+	}
+	target := &Target{Scheme: u.Scheme, Authority: u.Host}
+	if len(u.Path) > 1 {
+		target.Endpoint = u.Path[1:]
+	}
+
+	return target, nil
 }

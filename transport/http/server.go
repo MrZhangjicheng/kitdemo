@@ -44,6 +44,7 @@ type Server struct {
 	// 路由能力 支持动态路由以及路由组的概念
 	// router      *mux.Router
 	// strictSlash bool // 路由规则是否严格
+	// 主要针对gin的集成
 	handler http.Handler
 }
 
