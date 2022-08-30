@@ -63,7 +63,7 @@ type clientOptions struct {
 // 	return grpc.DialContext(ctx, options.endpoint, grpcOpts...)
 // }
 
-func dial(ctx context.Context, opts ...Option) (*grpc.ClientConn, error) {
+func Dial(ctx context.Context, opts ...Option) (*grpc.ClientConn, error) {
 	options := clientOptions{}
 	grpcOpts := []grpc.DialOption{}
 	for _, opt := range opts {
