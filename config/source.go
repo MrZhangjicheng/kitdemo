@@ -14,7 +14,7 @@ type Source interface {
 	Watch() (Watcher, error)
 }
 
-// 观察者 进行热更新
+// 观察者 负责观察数据源的改变
 type Watcher interface {
 	Next() ([]*KeyValue, error)
 

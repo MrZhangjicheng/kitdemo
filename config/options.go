@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"log"
+	"regexp"
 	"strings"
 
 	"github.com/MrZhangjicheng/kitdemo/encoding"
@@ -33,6 +35,10 @@ func WithDecoder(d Decoder) Option {
 	}
 }
 
+func WithLogger(l log.Logger) Option {
+	return func(o *options) {}
+}
+
 func WithResolver(r Resolver) Option {
 	return func(o *options) {
 		o.resolver = r
@@ -61,7 +67,58 @@ func defaultDecoder(src *KeyValue, target map[string]interface{}) error {
 	return fmt.Errorf("unsupporten key: %s format: %s", src.Key, src.Format)
 }
 
+// 逻辑不清，应该是针对不同种类型进行解析
 func defaultResolver(input map[string]interface{}) error {
-	return nil
+	mapper := func(name string) string {
+		args := strings.SplitN(strings.TrimSpace(name), ":", 2)
+		if v, has := readValue(input, args[0]); has {
+			s, _ := v.String()
+			return s
+		} else if len(args) > 1 {
+			return args[1]
+		}
 
+		return ""
+	}
+	var resolve func(map[string]interface{}) error
+	resolve = func(sub map[string]interface{}) error {
+		for k, v := range sub {
+			switch vt := v.(type) {
+			case string:
+				sub[k] = expand(vt, mapper)
+			case map[string]interface{}:
+				if err := resolve(vt); err != nil {
+					return err
+				}
+			case []interface{}:
+				for i, iface := range vt {
+					switch it := iface.(type) {
+					case string:
+						vt[i] = expand(it, mapper)
+					case map[string]interface{}:
+						if err := resolve(it); err != nil {
+							return err
+						}
+					}
+				}
+				sub[k] = vt
+			}
+		}
+		return nil
+	}
+	return resolve(input)
+
+}
+
+// 变量替换 但具体实现不清楚
+func expand(s string, mapping func(string) string) string {
+	r := regexp.MustCompile(`\${(.*?)}`)
+	re := r.FindAllStringSubmatch(s, -1)
+	for _, i := range re {
+		if len(i) == 2 {
+			s = strings.ReplaceAll(s, i[0], mapping(i[1]))
+		}
+	}
+
+	return s
 }

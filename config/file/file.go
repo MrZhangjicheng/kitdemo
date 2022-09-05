@@ -15,6 +15,10 @@ type file struct {
 	path string
 }
 
+func NewSource(path string) config.Source {
+	return &file{path: path}
+}
+
 func (f *file) loadFile(path string) (*config.KeyValue, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -70,4 +74,8 @@ func (f *file) Load() (kvs []*config.KeyValue, err error) {
 	}
 	return []*config.KeyValue{kv}, nil
 
+}
+
+func (f *file) Watch() (config.Watcher, error) {
+	return newWatcher(f)
 }
