@@ -25,8 +25,9 @@ type Watcher interface {
 
 // 服务的抽象,即需要在注册中心注册的信息  k-v
 type ServiceIntance struct {
-	ID        string   `json:"id"`   // 服务实例唯一id
-	Name      string   `json:"name"` // 服务名称
-	Version   string   `json:"version"`
-	Endpoints []string `json:"endpoints"` // 服务地址   “http://127.0.0.1:8000”,"grpc://127.0.0.1:9000"
+	ID        string            `json:"id"`   // 服务实例唯一id
+	Name      string            `json:"name"` // 服务名称
+	Version   string            `json:"version"`
+	Metadata  map[string]string `json:"metadata"`
+	Endpoints []string          `json:"endpoints"` // 服务地址   “http://127.0.0.1:8000”,"grpc://127.0.0.1:9000"
 }
