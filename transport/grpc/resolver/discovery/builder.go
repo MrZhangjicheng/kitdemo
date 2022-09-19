@@ -60,7 +60,9 @@ func (b *builder) Build(target resolver.Target, cc resolver.ClientConn, opts res
 	// go func() {
 
 	// }
-	return nil, nil
+	r := &discoveryResolver{}
+
+	return r, nil
 
 }
 

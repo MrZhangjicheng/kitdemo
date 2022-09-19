@@ -17,4 +17,6 @@ func NewBuilder(opts ...Option) selector.Builder {
 	for _, opt := range opts {
 		opt(&option)
 	}
+	return &selector.DefaultBuilder{}
+
 }

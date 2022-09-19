@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// 负责合并 取值
 type Reader interface {
 	Merge(...*KeyValue) error
 
