@@ -4,3 +4,20 @@
     多个结构体嵌套，无法明确各结构体的意义
     客户端负载均衡是如何挑选 
     节点变更后如何处理
+
+
+
+
+负载均衡模块采用了 建造者模式
+    Selector 接口 包括 reblancer 和 Select 
+        reblancer 负责监听服务列表的修改,并进行选择  Apply 
+        
+        select    是负责进行将符合条件的服务列表进行筛选(节点过滤)，但实质上还是调用的 reblancer的 pick函数
+    // 最基础接口
+        Builder 接口 负责创建 Selector 接口
+        Selector  接口 负责筛选 
+            Reblancer 接口 负责监听服务列表的修改
+        Node   接口  节点的抽象
+    // 针对负载均衡的相关的接口  各种算法实现在基于这个接口实现
+        Balancer 接口 选择对应的加权节点 可以理解为 是 Selector的子级
+        WeightedNode 接口 负责加权的节点 在Node接口上更详细的接口
