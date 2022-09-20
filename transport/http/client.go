@@ -3,12 +3,22 @@ package http
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net/http"
-	"net/url"
-	"strings"
+
+	"github.com/MrZhangjicheng/kitdemo/internal/host"
 
 	"github.com/MrZhangjicheng/kitdemo/registry"
+	"github.com/MrZhangjicheng/kitdemo/selector"
+	"github.com/MrZhangjicheng/kitdemo/selector/random"
 )
+
+// 服务启动时初始化默认的全局selector的构建器
+func init() {
+	if selector.GlobalSelector() == nil {
+		selector.SetGlobalSelector(random.NewBuilder())
+	}
+}
 
 type ClientOption func(*clientOptions)
 
@@ -29,12 +39,16 @@ type clientOptions struct {
 	tlsConf   *tls.Config
 	endpoint  string
 	discovery registry.Discover
+	block     bool
 }
 
 type Client struct {
 	opts     clientOptions
+	target   *Target
 	cc       *http.Client
 	insecure bool
+	r        *resolver
+	selector selector.Selector
 }
 
 func Newclient(ctx context.Context, opts ...ClientOption) (*Client, error) {
@@ -49,17 +63,14 @@ func Newclient(ctx context.Context, opts ...ClientOption) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	if target.Scheme == "discovery" {
-		watcher, err := options.discovery.Watch(context.Background(), target.Endpoint)
-		if err != nil {
-			panic("服务发现错误")
-		}
-		srvs, _ := watcher.Next()
-		// 同时开启http服务和grpc服务选择对服务
-		srv := srvs[0]
-		for _, k := range srv.Endpoints {
-			if strings.Contains(k, "http") {
-				options.endpoint = k[7:]
+	selector := selector.GlobalSelector().Build()
+	var r *resolver
+	if options.discovery != nil {
+		if target.Scheme == "discovery" {
+			if r, err = newResolver(ctx, options.discovery, target, selector, options.block, insecure); err != nil {
+				return nil, fmt.Errorf("[http client] new resolver failed!err: %v", options.endpoint)
+			} else if _, _, err := host.ExtractHostPort(options.endpoint); err != nil {
+				return nil, fmt.Errorf("[http client] invalid endpoint format: %v", options.endpoint)
 			}
 		}
 	}
@@ -67,7 +78,9 @@ func Newclient(ctx context.Context, opts ...ClientOption) (*Client, error) {
 	return &Client{
 		opts:     options,
 		insecure: insecure,
+		r:        r,
 		cc:       &http.Client{},
+		selector: selector,
 	}, nil
 
 }
@@ -84,29 +97,4 @@ func (client *Client) Do(method, path string) (*http.Response, error) {
 		return nil, err
 	}
 	return resp, nil
-}
-
-type Target struct {
-	Scheme    string
-	Authority string
-	Endpoint  string
-}
-
-func parseTarget(endpoint string, insecure bool) (*Target, error) {
-	if !strings.Contains(endpoint, "://") {
-		if insecure {
-			endpoint = "http://" + endpoint
-		} else {
-			endpoint = "https://" + endpoint
-		}
-	}
-	u, err := url.Parse(endpoint)
-	if err != nil {
-		return nil, err
-	}
-	target := &Target{Scheme: u.Scheme, Authority: u.Host}
-	if len(u.Path) > 1 {
-		target.Endpoint = u.Path[1:]
-	}
-	return target, nil
 }

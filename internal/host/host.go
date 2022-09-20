@@ -6,6 +6,16 @@ import (
 	"strconv"
 )
 
+func ExtractHostPort(addr string) (host string, port uint64, err error) {
+	var ports string
+	host, ports, err = net.SplitHostPort(addr)
+	if err != nil {
+		return
+	}
+	port, err = strconv.ParseUint(ports, 10, 16) //nolint:gomnd
+	return
+}
+
 func Port(lis net.Listener) (int, bool) {
 	if addr, ok := lis.Addr().(*net.TCPAddr); ok {
 		return addr.Port, true

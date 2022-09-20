@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"log"
 	"time"
 
@@ -96,7 +97,7 @@ func dial(ctx context.Context, insecure bool, opts ...ClientOption) (*grpc.Clien
 	}
 	grpcOpts := []grpc.DialOption{
 		// 负载均衡相关配置
-		// grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"loadBalacncingConfig":[{"%s":{}}]}`, options.balancerName)),
+		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"loadBalacncingConfig":[{"%s":{}}]}`, options.balancerName)),
 
 		grpc.WithChainUnaryInterceptor(ints...),
 	}
