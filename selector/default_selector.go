@@ -59,7 +59,6 @@ func (d *Default) Select(ctx context.Context, opts ...SelectOption) (selected No
 	}
 	return wn.Raw(), nil
 
-	return
 }
 
 // 如果服务列表更新，直接替换本地cache

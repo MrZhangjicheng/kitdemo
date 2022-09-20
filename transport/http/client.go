@@ -74,7 +74,6 @@ func Newclient(ctx context.Context, opts ...ClientOption) (*Client, error) {
 			}
 		}
 	}
-
 	return &Client{
 		opts:     options,
 		insecure: insecure,

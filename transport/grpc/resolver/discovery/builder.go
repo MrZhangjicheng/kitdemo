@@ -30,6 +30,7 @@ func DisableDebugLog() Option {
 	}
 }
 
+// 这个实现grpc内部接口，来实现负载均衡
 type builder struct {
 	discover         registry.Discover
 	timeout          time.Duration
